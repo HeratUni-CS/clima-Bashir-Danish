@@ -18,3 +18,7 @@ const kButtonTextStyle = TextStyle(
 const kConditionTextStyle = TextStyle(
   fontSize: 100.0,
 );
+
+const kApiKey = 'f669ffef321c0f3cf928deb7a7a4164a';
+const kLightColor = Colors.white;
+const kMidLightColor = Colors.white60;
