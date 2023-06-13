@@ -11,4 +11,11 @@ class Weather {
     var weatherData = await networkHelper.getData();
     return weatherData;
   }
+  Future<dynamic> getCityWeather(String city)async{
+    NetworkHelper networkHelper = NetworkHelper(
+      'https://api.openweathermap.org/data/2.5/weather?q=$city&appid=$kApiKey&units=metric'
+    );
+    var weatherData = await networkHelper.getData();
+    return weatherData;
+  }
 }

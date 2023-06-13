@@ -40,20 +40,29 @@ class _LoadingScreenState extends State<LoadingScreen> {
       permission = await Geolocator.requestPermission();
       if (permission != LocationPermission.denied) {
         if (permission == LocationPermission.deniedForever) {
-          print('Permission permanently denied');
+          // print('Permission permanently denied');
+          setState(() {
+            isDataLoaded = true;
+            isErrorOcurred = true;
+            title = 'Permission permanently denied';
+            message = 'Please enable the location service to see weather condition for your location';
+            return;
+          });
         } else {
           updateUI();
         }
       } else {
-        print('Location permissions are denied');
+        // print('Location permissions are denied');
       }
     } else {
       updateUI();
     }
   }
 
-  void updateUI() async {
-    if (!await geolocatorPlatform.isLocationServiceEnabled()) {
+  void updateUI({String? city}) async {
+    weatherData =null;
+    if(city ==null || city == ''){
+      if (!await geolocatorPlatform.isLocationServiceEnabled()) {
       setState(() {
         isDataLoaded = true;
         isErrorOcurred = true;
@@ -62,7 +71,20 @@ class _LoadingScreenState extends State<LoadingScreen> {
         return;
       });
     }
-    weatherData =await weather.getLocationWeather();
+      weatherData= await weather.getLocationWeather();
+    }else{
+      weatherData =await weather.getCityWeather(city);
+    }
+    if (weatherData == null) {
+      setState(() {
+        title='City not found';
+        message='Please enter right city name';
+        isDataLoaded = true;
+        isErrorOcurred = true;
+        return;
+      });
+    }else{
+
     code = weatherData['weather'][0]['id'];
     weatherModel = WeatherModel(
       location: weatherData['name'] + ', ' + weatherData['sys']['country'],
@@ -76,7 +98,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
     );
     setState(() {
       isDataLoaded = true;
+      isErrorOcurred = false;
     });
+    }
   }
 
   @override
@@ -85,6 +109,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
       return const Loader();
     } else {
       return Scaffold(
+        resizeToAvoidBottomInset: false,
         backgroundColor: kOverlayColor,
         body: SafeArea(
           child: Column(
@@ -98,7 +123,10 @@ class _LoadingScreenState extends State<LoadingScreen> {
                       child: TextField(
                         decoration: kTextFiledDecoration,
                         onSubmitted: (String typename) {
-                          print(typename);
+                          setState(() {
+                          isDataLoaded =false;
+                          });
+                          updateUI(city:typename);
                         },
                       ),
                     ),
@@ -109,7 +137,10 @@ class _LoadingScreenState extends State<LoadingScreen> {
                       padding: const EdgeInsets.only(right: 12.0),
                       child: ElevatedButton(
                         onPressed: () {
-                          getPermission();
+                          setState(() {
+                            isDataLoaded =false;
+                            getPermission();
+                          });
                         },
                         style: ElevatedButton.styleFrom(
                           elevation: 1,
