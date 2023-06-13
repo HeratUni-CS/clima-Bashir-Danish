@@ -1,10 +1,14 @@
 import 'package:clima/component/details.dart';
+import 'package:clima/component/error_message.dart';
 import 'package:clima/component/loader.dart';
 import 'package:clima/models/weather_model.dart';
 import 'package:clima/services/location.dart';
 import 'package:clima/services/networking.dart';
+import 'package:clima/services/weather.dart';
 import 'package:clima/utilities/constants.dart';
+import 'package:clima/utilities/weather_icons.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:geolocator/geolocator.dart';
 
 class LoadingScreen extends StatefulWidget {
@@ -14,10 +18,15 @@ class LoadingScreen extends StatefulWidget {
 
 class _LoadingScreenState extends State<LoadingScreen> {
   bool isDataLoaded = false;
+  bool isErrorOcurred = false;
   double? latitude, longitude;
   WeatherModel? weatherModel;
   GeolocatorPlatform geolocatorPlatform = GeolocatorPlatform.instance;
   LocationPermission? permission;
+  int code = 0;
+  Weather weather =Weather();
+  var weatherData;
+  String? title,message;
 
   @override
   void initState() {
@@ -33,33 +42,37 @@ class _LoadingScreenState extends State<LoadingScreen> {
         if (permission == LocationPermission.deniedForever) {
           print('Permission permanently denied');
         } else {
-          getCurrentLocation();
+          updateUI();
         }
       } else {
         print('Location permissions are denied');
       }
     } else {
-      getCurrentLocation();
+      updateUI();
     }
   }
 
-  void getCurrentLocation() async {
-    Location location = Location();
-    await location.getCurrentLocation();
-
-    latitude = location.latitude;
-    longitude = location.longitude;
-    NetworkHelper networkHelper = NetworkHelper(
-        'https://api.openweathermap.org/data/2.5/weather?lat=$latitude&lon=$longitude&appid=$kApiKey&units=metric');
-    var weatherData = await networkHelper.getData();
+  void updateUI() async {
+    if (!await geolocatorPlatform.isLocationServiceEnabled()) {
+      setState(() {
+        isDataLoaded = true;
+        isErrorOcurred = true;
+        title = 'Location is turned off';
+        message = 'Please enable the location service to see weather condition for your location';
+        return;
+      });
+    }
+    weatherData =await weather.getLocationWeather();
+    code = weatherData['weather'][0]['id'];
     weatherModel = WeatherModel(
-      location: weatherData['name']+', '+weatherData['sys']['country'],
-      description:weatherData['weather'][0]['description'],
-      icon: weatherData['weather'][0]['icon'],
+      location: weatherData['name'] + ', ' + weatherData['sys']['country'],
+      description: weatherData['weather'][0]['description'],
+      icon:
+          'images/weather-icons/${getIconPrefix(code)}${kWeatherIcons[code.toString()]!['icon']!}.svg',
       temperature: weatherData['main']['temp'],
       feelsLikes: weatherData['main']['feels_like'],
       humidity: weatherData['main']['humidity'],
-      wind: weatherData['main']['speed'],
+      wind: weatherData['wind']['speed'],
     );
     setState(() {
       isDataLoaded = true;
@@ -95,7 +108,9 @@ class _LoadingScreenState extends State<LoadingScreen> {
                     child: Padding(
                       padding: const EdgeInsets.only(right: 12.0),
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          getPermission();
+                        },
                         style: ElevatedButton.styleFrom(
                           elevation: 1,
                           backgroundColor: Colors.white10,
@@ -126,6 +141,8 @@ class _LoadingScreenState extends State<LoadingScreen> {
                   ),
                 ],
               ),
+              isErrorOcurred ?
+              ErrorMessage(title: title!, message: message!) :
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -133,11 +150,11 @@ class _LoadingScreenState extends State<LoadingScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                       const Icon(
+                        const Icon(
                           Icons.location_city,
                           color: kMidLightColor,
                         ),
-                       const SizedBox(
+                        const SizedBox(
                           width: 12,
                         ),
                         Text(
@@ -146,22 +163,23 @@ class _LoadingScreenState extends State<LoadingScreen> {
                         ),
                       ],
                     ),
-                  const  SizedBox(
+                    const SizedBox(
                       height: 25,
                     ),
-                  const  Icon(
-                      Icons.wb_sunny_outlined,
-                      size: 250,
+                    SvgPicture.asset(
+                      weatherModel!.icon!,
+                      height: 250,
+                      color: kLightColor,
                     ),
-                  const  SizedBox(
+                    const SizedBox(
                       width: 40,
                     ),
                     Text(
-                      '${weatherModel!.temperature!}°',
+                      '${weatherModel!.temperature!.round()}°',
                       style: kTempTextStyle,
                     ),
                     Text(
-                      weatherModel!.description!,
+                      weatherModel!.description!.toUpperCase(),
                       style: kLocationTextStyle,
                     ),
                   ],
@@ -176,15 +194,28 @@ class _LoadingScreenState extends State<LoadingScreen> {
                   ),
                   child: Container(
                     height: 90,
-                    child:const  Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Details( title: 'FEELS LIKE',value: '31°',),
-                        VerticalDivider(thickness: 1,),
-                        Details( title: 'HUMIDITY',value: '13%' ,),
-                        VerticalDivider(thickness: 1,),
-                        Details( title: 'WIND',value: '7',),
+                        Details(
+                          title: 'FEELS LIKE',
+                          value: '${weatherModel != null ? weatherModel!.feelsLikes! :0}°',
+                        ),
+                        VerticalDivider(
+                          thickness: 1,
+                        ),
+                        Details(
+                          title: 'HUMIDITY',
+                          value: '${weatherModel != null ? weatherModel!.humidity! :0}%',
+                        ),
+                        VerticalDivider(
+                          thickness: 1,
+                        ),
+                        Details(
+                          title: 'WIND',
+                          value: '${weatherModel != null ? weatherModel!.wind! :0}',
+                        ),
                       ],
                     ),
                   ),

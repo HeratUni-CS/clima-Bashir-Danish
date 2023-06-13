@@ -9,19 +9,20 @@ class Loader extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       backgroundColor: kOverlayColor,
-      body: Center(
-        child: Column(
-          children: [
-            SpinKitPulse(
-              color: Colors.white,
-              size: 100,
-            ),
-            SizedBox(height: 10,),
-            Text('Fetching data ...',style: TextStyle(
-              fontSize: 20,
-              color: kMidLightColor,
-            ),)
-          ],),
+      body: SafeArea(
+        child: Center(
+          child: Expanded(
+            flex: 12,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SpinKitPulse(
+                  color: Colors.white,
+                  size: 100,
+                ),
+              ],),
+          ),
+        ),
       ),
     );
   }
