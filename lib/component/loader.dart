@@ -8,7 +8,7 @@ class Loader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      backgroundColor: kLightColor,
+      backgroundColor: kOverlayColor,
       body: Center(
         child: Column(
           children: [
