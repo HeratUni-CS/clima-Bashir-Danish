@@ -8,7 +8,7 @@ const kDarkColor = Colors.white24;
 
 const kTempTextStyle = TextStyle(
   fontFamily: 'Spartan MB',
-  fontSize: 100.0,
+  fontSize: 70.0,
 );
 
 const kMessageTextStyle = TextStyle(

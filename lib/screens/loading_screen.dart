@@ -1,5 +1,6 @@
 import 'package:clima/component/details.dart';
 import 'package:clima/component/loader.dart';
+import 'package:clima/models/weather_model.dart';
 import 'package:clima/services/location.dart';
 import 'package:clima/services/networking.dart';
 import 'package:clima/utilities/constants.dart';
@@ -14,6 +15,7 @@ class LoadingScreen extends StatefulWidget {
 class _LoadingScreenState extends State<LoadingScreen> {
   bool isDataLoaded = false;
   double? latitude, longitude;
+  WeatherModel? weatherModel;
   GeolocatorPlatform geolocatorPlatform = GeolocatorPlatform.instance;
   LocationPermission? permission;
 
@@ -48,8 +50,17 @@ class _LoadingScreenState extends State<LoadingScreen> {
     latitude = location.latitude;
     longitude = location.longitude;
     NetworkHelper networkHelper = NetworkHelper(
-        'https://api.openweathermap.org/data/2.5/weather?lat=$latitude.34&lon=$longitude.99&appid=$kApiKey');
+        'https://api.openweathermap.org/data/2.5/weather?lat=$latitude&lon=$longitude&appid=$kApiKey&units=metric');
     var weatherData = await networkHelper.getData();
+    weatherModel = WeatherModel(
+      location: weatherData['name']+', '+weatherData['sys']['country'],
+      description:weatherData['weather'][0]['description'],
+      icon: weatherData['weather'][0]['icon'],
+      temperature: weatherData['main']['temp'],
+      feelsLikes: weatherData['main']['feels_like'],
+      humidity: weatherData['main']['humidity'],
+      wind: weatherData['main']['speed'],
+    );
     setState(() {
       isDataLoaded = true;
     });
@@ -115,42 +126,42 @@ class _LoadingScreenState extends State<LoadingScreen> {
                   ),
                 ],
               ),
-              const Expanded(
+              Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
+                       const Icon(
                           Icons.location_city,
                           color: kMidLightColor,
                         ),
-                        SizedBox(
+                       const SizedBox(
                           width: 12,
                         ),
                         Text(
-                          'City Name',
+                          weatherModel!.location!,
                           style: kLocationTextStyle,
                         ),
                       ],
                     ),
-                    SizedBox(
+                  const  SizedBox(
                       height: 25,
                     ),
-                    Icon(
+                  const  Icon(
                       Icons.wb_sunny_outlined,
                       size: 250,
                     ),
-                    SizedBox(
+                  const  SizedBox(
                       width: 40,
                     ),
                     Text(
-                      '00',
+                      '${weatherModel!.temperature!}°',
                       style: kTempTextStyle,
                     ),
                     Text(
-                      'CLEAR SKY',
+                      weatherModel!.description!,
                       style: kLocationTextStyle,
                     ),
                   ],
